@@ -3,7 +3,6 @@
   --bg-top: #f8efe4;
   --bg-bottom: #eef5ff;
   --surface: rgba(255, 255, 255, 0.78);
-  --surface-strong: #ffffff;
   --text: #182033;
   --muted: #5d6880;
   --line: rgba(24, 32, 51, 0.1);
@@ -59,7 +58,7 @@ p {
 }
 
 h1 {
-  max-width: 10ch;
+  max-width: 8ch;
   font-size: clamp(40px, 8vw, 76px);
   line-height: 0.95;
 }
@@ -94,9 +93,9 @@ h1 {
 }
 
 .muted {
-  max-width: 360px;
+  max-width: 420px;
   color: var(--muted);
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 .grid {
@@ -106,8 +105,9 @@ h1 {
   margin-bottom: 24px;
 }
 
-.grid > .panel,
-.panel:last-of-type {
+.details-panel,
+.response-panel,
+.controls-panel {
   padding: 24px;
 }
 
@@ -144,6 +144,66 @@ dd {
   gap: 12px;
 }
 
+.shop-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: end;
+  margin: 28px 0 18px;
+}
+
+.shop-head h2 {
+  font-size: clamp(26px, 5vw, 42px);
+}
+
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.shop-card {
+  padding: 24px;
+}
+
+.shop-card h3 {
+  margin-top: 8px;
+  font-size: 28px;
+}
+
+.shop-card p {
+  margin-top: 10px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.shop-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin: 22px 0;
+}
+
+.price-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(13, 111, 102, 0.1);
+  color: var(--accent-strong);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.status-copy {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
 button {
   border: 0;
   border-radius: 999px;
@@ -151,11 +211,16 @@ button {
   font: inherit;
   font-size: 15px;
   cursor: pointer;
-  transition: transform 160ms ease, background-color 160ms ease, color 160ms ease;
+  transition: transform 160ms ease, background-color 160ms ease, color 160ms ease, opacity 160ms ease;
 }
 
-button:hover {
+button:hover:not(:disabled) {
   transform: translateY(-1px);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
 }
 
 button.primary,
@@ -173,6 +238,10 @@ button.ghost {
   background: transparent;
   color: var(--text);
   border: 1px solid var(--line);
+}
+
+.shop-card button {
+  width: 100%;
 }
 
 .response {
@@ -193,6 +262,12 @@ button.ghost {
   display: none;
 }
 
+@media (max-width: 900px) {
+  .shop-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 760px) {
   .shell {
     width: min(100% - 20px, 1120px);
@@ -200,12 +275,11 @@ button.ghost {
   }
 
   .status-panel,
-  .grid {
-    grid-template-columns: 1fr;
-    display: grid;
-  }
-
+  .grid,
+  .shop-head,
+  .shop-grid,
   .details {
+    display: grid;
     grid-template-columns: 1fr;
   }
 }

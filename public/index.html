@@ -1,37 +1,37 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Eventicious Identity Checker</title>
-  <meta name="description" content="Проверка пользователя, открывшего страницу внутри Eventicious через SDK.">
+  <title>Eventicious Reward Shop</title>
+  <meta name="description" content="A small Eventicious reward shop powered by Cloudflare Worker and Eventicious SDK.">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
   <main class="shell">
     <section class="hero">
       <p class="eyebrow">Eventicious + Cloudflare</p>
-      <h1>Кто открыл эту страницу</h1>
+      <h1>Reward Shop</h1>
       <p class="lede">
-        Страница безопасно инициализирует Eventicious SDK, считывает данные текущего пользователя
-        и отправляет их на Cloudflare Worker для проверки и логирования.
+        A lightweight in-app store that recognizes the current Eventicious visitor,
+        shows purchasable rewards, and writes off points through the Eventicious external API.
       </p>
     </section>
 
     <section class="panel status-panel">
       <div>
-        <p class="label">Статус SDK</p>
-        <h2 id="sdk-status">Инициализация...</h2>
+        <p class="label">SDK Status</p>
+        <h2 id="sdk-status">Initializing...</h2>
       </div>
       <p id="sdk-hint" class="muted">
-        Если сайт открыт вне приложения Eventicious, SDK-методы будут недоступны.
+        The checkout works only when the page is opened inside Eventicious and the profile exposes a usable external ID.
       </p>
     </section>
 
     <section class="grid">
-      <article class="panel">
-        <p class="label">Распознанный пользователь</p>
-        <h3 id="identity-name">Пока не определен</h3>
+      <article class="panel details-panel">
+        <p class="label">Current Visitor</p>
+        <h3 id="identity-name">Not identified yet</h3>
         <dl class="details">
           <div>
             <dt>User GUID</dt>
@@ -54,26 +54,40 @@
             <dd id="sdk-locale">-</dd>
           </div>
           <div>
-            <dt>Время открытия</dt>
+            <dt>External ID</dt>
+            <dd id="external-id">-</dd>
+          </div>
+          <div>
+            <dt>Opened At</dt>
             <dd id="opened-at">-</dd>
           </div>
         </dl>
       </article>
 
-      <article class="panel">
-        <p class="label">Ответ Cloudflare Worker</p>
-        <pre id="worker-response" class="response">Ожидаем результат...</pre>
+      <article class="panel response-panel">
+        <p class="label">Worker Response</p>
+        <pre id="worker-response" class="response">Waiting for the first response...</pre>
       </article>
     </section>
 
-    <section class="panel">
+    <section class="panel controls-panel">
       <div class="actions">
-        <button id="identify-button" type="button">Проверить пользователя</button>
-        <button id="profile-button" type="button" class="secondary">Показать raw profile</button>
-        <button id="close-button" type="button" class="ghost">Закрыть экран</button>
+        <button id="identify-button" type="button">Refresh Visitor</button>
+        <button id="profile-button" type="button" class="secondary">Show Raw Profile</button>
+        <button id="close-button" type="button" class="ghost">Close Screen</button>
       </div>
       <pre id="profile-preview" class="response hidden"></pre>
     </section>
+
+    <section class="shop-head">
+      <div>
+        <p class="label">Store</p>
+        <h2>Choose a reward</h2>
+      </div>
+      <p class="muted" id="shop-note">Loading store configuration...</p>
+    </section>
+
+    <section id="shop-items" class="shop-grid"></section>
   </main>
 
   <script type="text/javascript" src="eventicious://universal_component/eventicious_sdk-1.0.js"></script>

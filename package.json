@@ -2,6 +2,7 @@
   "name": "eventicious-identity-checker",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "Cloudflare Worker + static site that identifies the Eventicious user who opened the page.",
   "scripts": {
     "deploy": "wrangler deploy",

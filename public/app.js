@@ -1,6 +1,10 @@
 const state = {
   initialized: false,
   lastProfile: null,
+  lastVisitorPayload: null,
+  lastVisitResponse: null,
+  shopConfig: null,
+  purchaseInFlight: null,
 };
 
 function getSDK() {
@@ -29,6 +33,10 @@ function setProfilePreview(value) {
 
   node.classList.remove("hidden");
   node.textContent = JSON.stringify(value, null, 2);
+}
+
+function setShopNote(value) {
+  setText("shop-note", value);
 }
 
 function normalizeEnvironment(code) {
@@ -78,8 +86,8 @@ function extractIdentity(profile) {
   );
 
   return {
-    fullName: fullName || "Имя не найдено",
-    email: email || "Email не найден",
+    fullName: fullName || "Profile name not found",
+    email: email || "Email not found",
     company: company || null,
   };
 }
@@ -103,7 +111,7 @@ function configureSdkChrome(sdk) {
   }
 
   if (typeof sdk.setTitle === "function") {
-    sdk.setTitle("Identity Checker");
+    sdk.setTitle("Reward Shop");
   }
 }
 
@@ -153,20 +161,21 @@ function buildFallbackPayload() {
     openedAt: new Date().toISOString(),
     profile: null,
     identity: {
-      fullName: "Страница открыта вне Eventicious",
-      email: "SDK недоступен",
+      fullName: "Opened outside Eventicious",
+      email: "SDK unavailable",
       company: null,
     },
   };
 }
 
-function updateIdentityCard(payload) {
+function updateIdentityCard(payload, visitResponse) {
   setText("identity-name", payload.identity.fullName);
-  setText("user-guid", payload.userGuid || "Не получен");
+  setText("user-guid", payload.userGuid || "Not available");
   setText("user-email", payload.identity.email);
-  setText("event-id", payload.conferenceId || "Не получен");
-  setText("sdk-env", payload.environment || "Не получен");
-  setText("sdk-locale", payload.locale || "Не получен");
+  setText("event-id", payload.conferenceId || "Not available");
+  setText("sdk-env", payload.environment || "Not available");
+  setText("sdk-locale", payload.locale || "Not available");
+  setText("external-id", visitResponse?.visit?.externalId ?? "Not resolved");
   setText("opened-at", new Date(payload.openedAt).toLocaleString());
 }
 
@@ -182,37 +191,143 @@ async function sendIdentity(payload) {
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.error || "Не удалось отправить данные на Worker.");
+    throw new Error(data.error || "Failed to send visitor data to the Worker.");
   }
 
   return data;
 }
 
+async function fetchShopConfig() {
+  const response = await fetch("/api/shop");
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Failed to load store configuration.");
+  }
+
+  return data;
+}
+
+async function sendPurchase(itemId) {
+  const response = await fetch("/api/purchase", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      itemId,
+      orderId: crypto.randomUUID(),
+      visitor: state.lastVisitorPayload,
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Failed to complete purchase.");
+  }
+
+  return data;
+}
+
+function canPurchase() {
+  const externalId = state.lastVisitResponse?.visit?.externalId;
+  return Boolean(
+    state.lastVisitorPayload?.source === "eventicious-sdk" &&
+    externalId !== null &&
+    externalId !== undefined &&
+    state.shopConfig?.capabilities?.canPurchase
+  );
+}
+
+function renderShop() {
+  const container = document.getElementById("shop-items");
+  const items = state.shopConfig?.items || [];
+
+  container.innerHTML = "";
+
+  if (items.length === 0) {
+    container.innerHTML = "<article class=\"panel shop-card\"><p>No shop items configured yet.</p></article>";
+    return;
+  }
+
+  for (const item of items) {
+    const card = document.createElement("article");
+    card.className = "panel shop-card";
+
+    const statusCopy = canPurchase()
+      ? "Ready to submit a point write-off request."
+      : "Checkout is blocked until the page is opened inside Eventicious and the Worker is fully configured.";
+
+    card.innerHTML = `
+      <p class="label">Reward</p>
+      <h3>${item.title}</h3>
+      <p>${item.description || ""}</p>
+      <div class="shop-meta">
+        <span class="price-pill">${item.cost} pts</span>
+      </div>
+      <button type="button" data-item-id="${item.id}" ${canPurchase() ? "" : "disabled"}>Buy Item</button>
+      <div class="status-copy">${statusCopy}</div>
+    `;
+
+    container.appendChild(card);
+  }
+
+  container.querySelectorAll("button[data-item-id]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      if (state.purchaseInFlight) {
+        return;
+      }
+
+      state.purchaseInFlight = button.getAttribute("data-item-id");
+      button.textContent = "Processing...";
+      button.disabled = true;
+
+      try {
+        const result = await sendPurchase(state.purchaseInFlight);
+        setWorkerResponse(result);
+      } catch (error) {
+        setWorkerResponse({
+          ok: false,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      } finally {
+        state.purchaseInFlight = null;
+        renderShop();
+      }
+    });
+  });
+}
+
 async function identifyCurrentVisitor() {
   const sdk = getSDK();
   const payload = sdk ? buildPayloadFromSdk(sdk) : buildFallbackPayload();
+  state.lastVisitorPayload = payload;
 
-  updateIdentityCard(payload);
   setProfilePreview(null);
 
   if (sdk) {
     updateSdkStatus(
-      "SDK подключен",
-      "Данные пользователя читаются из Eventicious и отправляются на Cloudflare Worker."
+      "SDK connected",
+      "Visitor data is being read from Eventicious and sent to the Worker."
     );
   } else {
     updateSdkStatus(
-      "SDK не найден",
-      "Это ожидаемо в обычном браузере. Страница покажет fallback-результат без данных Eventicious."
+      "SDK not found",
+      "This is expected in a normal browser. The page will stay in fallback mode."
     );
   }
 
-  setWorkerResponse("Отправляем данные на Cloudflare Worker...");
+  setWorkerResponse("Sending visitor data to the Worker...");
 
   try {
     const result = await sendIdentity(payload);
+    state.lastVisitResponse = result;
+    updateIdentityCard(payload, result);
     setWorkerResponse(result);
+    renderShop();
   } catch (error) {
+    updateIdentityCard(payload, null);
     setWorkerResponse({
       ok: false,
       error: error instanceof Error ? error.message : String(error),
@@ -246,7 +361,23 @@ function initEventiciousPage() {
     window.close();
   });
 
-  identifyCurrentVisitor();
+  fetchShopConfig()
+    .then((result) => {
+      state.shopConfig = result;
+      const notes = result.capabilities?.notes || [];
+      setShopNote(notes[0] || "Shop configuration loaded.");
+      renderShop();
+    })
+    .catch((error) => {
+      setShopNote(error instanceof Error ? error.message : String(error));
+      setWorkerResponse({
+        ok: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    })
+    .finally(() => {
+      identifyCurrentVisitor();
+    });
 }
 
 window.addEventListener("EventiciousSDKLoaded", initEventiciousPage);

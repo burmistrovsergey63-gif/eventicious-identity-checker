@@ -3,6 +3,17 @@
   "name": "eventicious-identity-checker",
   "main": "./src/index.js",
   "compatibility_date": "2026-06-23",
+  // Add your real namespace ids here after creating KV namespaces.
+  // "kv_namespaces": [
+  //   {
+  //     "binding": "ORDERS_KV",
+  //     "id": "YOUR_ORDERS_NAMESPACE_ID"
+  //   },
+  //   {
+  //     "binding": "VISITS_KV",
+  //     "id": "YOUR_VISITS_NAMESPACE_ID"
+  //   }
+  // ],
   "assets": {
     "directory": "./public/",
     "binding": "ASSETS",
