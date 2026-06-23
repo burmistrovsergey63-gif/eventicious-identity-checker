@@ -3,6 +3,12 @@
   "name": "eventicious-identity-checker",
   "main": "./src/index.js",
   "compatibility_date": "2026-06-23",
+  "secrets": {
+    "required": [
+      "EVENTICIOUS_CLIENT_ID",
+      "EVENTICIOUS_CLIENT_SECRET"
+    ]
+  },
   "kv_namespaces": [
     {
       "binding": "ORDERS_KV",
