@@ -231,10 +231,7 @@ async function sendPurchase(itemId) {
 }
 
 function canPurchase() {
-  return Boolean(
-    state.lastVisitorPayload?.source === "eventicious-sdk" &&
-    state.shopConfig?.capabilities?.canPurchase
-  );
+  return state.lastVisitorPayload?.source === "eventicious-sdk";
 }
 
 function renderShop() {
@@ -254,7 +251,7 @@ function renderShop() {
 
     const statusCopy = canPurchase()
       ? "Ready to submit a point write-off request."
-      : "Checkout is blocked until the page is opened inside Eventicious and the Worker is fully configured.";
+      : "Checkout is available only when the page is opened inside Eventicious.";
 
     card.innerHTML = `
       <p class="label">Reward</p>
