@@ -224,7 +224,13 @@ async function sendPurchase(itemId) {
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.error || "Failed to complete purchase.");
+    const detailedMessage =
+      data.error ||
+      data.order?.error ||
+      "Failed to complete purchase.";
+    const error = new Error(detailedMessage);
+    error.payload = data;
+    throw error;
   }
 
   return data;
@@ -281,10 +287,16 @@ function renderShop() {
         const result = await sendPurchase(state.purchaseInFlight);
         setWorkerResponse(result);
       } catch (error) {
-        setWorkerResponse({
-          ok: false,
-          error: error instanceof Error ? error.message : String(error),
-        });
+        const payload = error && typeof error === "object" && "payload" in error
+          ? error.payload
+          : null;
+
+        setWorkerResponse(
+          payload || {
+            ok: false,
+            error: error instanceof Error ? error.message : String(error),
+          }
+        );
       } finally {
         state.purchaseInFlight = null;
         renderShop();
