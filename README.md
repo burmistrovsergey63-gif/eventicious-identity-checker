@@ -1,27 +1,25 @@
 # Eventicious Identity Checker
 
-Мини-проект для Eventicious: страница открывается внутри приложения, через `EventiciousSDK` определяет пользователя и отправляет результат на Cloudflare Worker.
+Small Eventicious project: a page opens inside the app, identifies the current visitor through `EventiciousSDK`, and sends the result to a Cloudflare Worker.
 
-## Что умеет
+## Features
 
-- безопасно подключает Eventicious SDK и не ломается в обычном браузере
-- читает `user GUID`, `event ID`, `locale`, `environment`
-- пытается получить профиль через `EventiciousSDK.profilesManager.getProfile(eventId)`
-- показывает данные на странице
-- отправляет их в `/api/identify`
-- может сохранять визиты в Cloudflare KV, если добавить binding `VISITS_KV`
+- safely loads Eventicious SDK and still works in a normal browser
+- reads `user GUID`, `event ID`, `locale`, and `environment`
+- tries to read the current profile through `EventiciousSDK.profilesManager.getProfile(eventId)`
+- shows the detected data on the page
+- sends the payload to `/api/identify`
+- can optionally store visits in Cloudflare KV through the `VISITS_KV` binding
 
-## Структура
+## Project Structure
 
-- `public/index.html` - UI для проверки пользователя
-- `public/app.js` - инициализация SDK и отправка данных
-- `public/styles.css` - стили
-- `src/index.js` - Cloudflare Worker API + выдача статики
-- `wrangler.jsonc` - конфиг Cloudflare Workers Static Assets
+- `public/index.html` - page UI
+- `public/app.js` - SDK initialization and identity collection
+- `public/styles.css` - styling
+- `src/index.js` - Cloudflare Worker API and static asset handler
+- `wrangler.jsonc` - Cloudflare Workers config
 
-## Как определяется пользователь
-
-Страница использует эти методы SDK:
+## SDK Methods Used
 
 - `EventiciousSDK.getUserGUID()`
 - `EventiciousSDK.getCurrentConferenceId()`
@@ -29,11 +27,9 @@
 - `EventiciousSDK.getEnv()`
 - `EventiciousSDK.profilesManager.getProfile(eventId)`
 
-Если страница открыта вне Eventicious, сайт показывает fallback-режим и отправляет на Worker только браузерные данные без SDK.
+If the page is opened outside Eventicious, the site falls back to browser-only mode and does not crash.
 
-## Локальный git
-
-Внутри папки проекта:
+## Local Git
 
 ```powershell
 git init
@@ -41,7 +37,7 @@ git add .
 git commit -m "Initial Eventicious identity checker"
 ```
 
-Если захотите сразу привязать удаленный репозиторий:
+To connect a remote repository:
 
 ```powershell
 git remote add origin <YOUR_GIT_REMOTE>
@@ -49,35 +45,35 @@ git branch -M main
 git push -u origin main
 ```
 
-## Деплой на Cloudflare
+## Cloudflare Deploy
 
-1. Установите Wrangler:
+1. Install Wrangler:
 
 ```powershell
 npm install -D wrangler
 ```
 
-2. Авторизуйтесь:
+2. Log in:
 
 ```powershell
 npx wrangler login
 ```
 
-3. Задеплойте проект:
+3. Deploy:
 
 ```powershell
 npx wrangler deploy
 ```
 
-## Опционально: сохранять визиты в KV
+## Optional KV Storage
 
-1. Создайте KV namespace:
+1. Create a KV namespace:
 
 ```powershell
 npx wrangler kv namespace create VISITS_KV
 ```
 
-2. Добавьте binding в `wrangler.jsonc`:
+2. Add the binding to `wrangler.jsonc`:
 
 ```json
 {
@@ -90,4 +86,4 @@ npx wrangler kv namespace create VISITS_KV
 }
 ```
 
-После этого Worker начнет сохранять визиты на 30 дней.
+After that, the Worker can store visit records for 30 days.
