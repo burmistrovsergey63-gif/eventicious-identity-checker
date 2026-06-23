@@ -231,11 +231,8 @@ async function sendPurchase(itemId) {
 }
 
 function canPurchase() {
-  const externalId = state.lastVisitResponse?.visit?.externalId;
   return Boolean(
     state.lastVisitorPayload?.source === "eventicious-sdk" &&
-    externalId !== null &&
-    externalId !== undefined &&
     state.shopConfig?.capabilities?.canPurchase
   );
 }

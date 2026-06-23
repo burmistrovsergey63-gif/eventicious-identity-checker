@@ -2,3 +2,4 @@ EVENTICIOUS_CLIENT_ID=your-client-id
 EVENTICIOUS_CLIENT_SECRET=your-client-secret
 EVENTICIOUS_BASE_URL=https://api-integration.eventicious.ru
 EVENTICIOUS_ALLOW_PROFILE_ID_FALLBACK=false
+SHOP_DEBUG_MODE=false

@@ -70,6 +70,14 @@ Optional local dev file:
 
 with the same keys as in `.dev.vars.example`.
 
+Temporary UI testing mode:
+
+```text
+SHOP_DEBUG_MODE=true
+```
+
+When enabled, the `Buy Item` buttons are unlocked and `/api/purchase` returns a mocked successful order without calling the real Eventicious write-off API.
+
 ## Cloudflare KV
 
 Create at least one KV namespace for orders:

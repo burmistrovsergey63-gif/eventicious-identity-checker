@@ -39,6 +39,10 @@ function isTrue(value) {
   return String(value || "").toLowerCase() === "true";
 }
 
+function isDebugMode(env) {
+  return isTrue(env.SHOP_DEBUG_MODE);
+}
+
 function sanitizeIdentity(identity) {
   return {
     fullName: sanitizeString(identity?.fullName) || "Unknown Eventicious user",
@@ -118,11 +122,15 @@ function getShopItems(env) {
 }
 
 function getPurchaseCapabilities(env) {
+  const debugMode = isDebugMode(env);
+
   return {
     canPurchase:
+      debugMode ||
       Boolean(sanitizeString(env.EVENTICIOUS_CLIENT_ID)) &&
       Boolean(sanitizeString(env.EVENTICIOUS_CLIENT_SECRET)) &&
       Boolean(env.ORDERS_KV && typeof env.ORDERS_KV.put === "function"),
+    debugMode,
     hasApiCredentials:
       Boolean(sanitizeString(env.EVENTICIOUS_CLIENT_ID)) &&
       Boolean(sanitizeString(env.EVENTICIOUS_CLIENT_SECRET)),
@@ -133,6 +141,7 @@ function getPurchaseCapabilities(env) {
       "The provided Eventicious API docs expose point write-off through negative scores on add-manual-charge.",
       "The provided docs do not expose a current points balance endpoint, so the shop cannot reliably pre-check remaining points.",
       "Identity comes from the Eventicious SDK running in the client. This is suitable for an MVP, but not a cryptographically verified checkout.",
+      debugMode ? "SHOP_DEBUG_MODE is enabled, so purchases can be tested without a real point write-off." : "Enable SHOP_DEBUG_MODE only for temporary UI testing.",
     ],
   };
 }
@@ -297,6 +306,7 @@ async function handlePurchase(request, env) {
   const itemId = sanitizeString(payload?.itemId);
   const orderId = sanitizeString(payload?.orderId);
   const visitorPayload = payload?.visitor || {};
+  const debugMode = isDebugMode(env);
   const items = getShopItems(env);
   const item = items.find((entry) => entry.id === itemId);
 
@@ -330,6 +340,43 @@ async function handlePurchase(request, env) {
   const visit = buildVisitRecord(visitorPayload, request, env);
 
   if (visit.source !== "eventicious-sdk") {
+    if (debugMode) {
+      const debugOrder = {
+        id: orderId,
+        createdAt: new Date().toISOString(),
+        completedAt: new Date().toISOString(),
+        status: "completed",
+        mode: "debug",
+        item: {
+          id: item.id,
+          title: item.title,
+          cost: item.cost,
+        },
+        visitor: {
+          fullName: visit.identity.fullName,
+          email: visit.identity.email,
+          userGuid: visit.userGuid,
+          conferenceId: visit.conferenceId,
+          externalId: visit.externalId,
+        },
+        eventicious: {
+          ok: true,
+          mocked: true,
+          message: "Debug mode completed a mock purchase without a real Eventicious API call.",
+        },
+      };
+
+      await env.ORDERS_KV.put(`order:${orderId}`, JSON.stringify(debugOrder), {
+        expirationTtl: 60 * 60 * 24 * 30,
+      });
+
+      return json({
+        ok: true,
+        order: debugOrder,
+        duplicate: false,
+      });
+    }
+
     return json(
       {
         ok: false,
@@ -340,6 +387,43 @@ async function handlePurchase(request, env) {
   }
 
   if (visit.externalId === null) {
+    if (debugMode) {
+      const debugOrder = {
+        id: orderId,
+        createdAt: new Date().toISOString(),
+        completedAt: new Date().toISOString(),
+        status: "completed",
+        mode: "debug",
+        item: {
+          id: item.id,
+          title: item.title,
+          cost: item.cost,
+        },
+        visitor: {
+          fullName: visit.identity.fullName,
+          email: visit.identity.email,
+          userGuid: visit.userGuid,
+          conferenceId: visit.conferenceId,
+          externalId: null,
+        },
+        eventicious: {
+          ok: true,
+          mocked: true,
+          message: "Debug mode completed a mock purchase without resolving externalId.",
+        },
+      };
+
+      await env.ORDERS_KV.put(`order:${orderId}`, JSON.stringify(debugOrder), {
+        expirationTtl: 60 * 60 * 24 * 30,
+      });
+
+      return json({
+        ok: true,
+        order: debugOrder,
+        duplicate: false,
+      });
+    }
+
     return json(
       {
         ok: false,
