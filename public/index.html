@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Eventicious Identity Checker</title>
+  <meta name="description" content="Проверка пользователя, открывшего страницу внутри Eventicious через SDK.">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <p class="eyebrow">Eventicious + Cloudflare</p>
+      <h1>Кто открыл эту страницу</h1>
+      <p class="lede">
+        Страница безопасно инициализирует Eventicious SDK, считывает данные текущего пользователя
+        и отправляет их на Cloudflare Worker для проверки и логирования.
+      </p>
+    </section>
+
+    <section class="panel status-panel">
+      <div>
+        <p class="label">Статус SDK</p>
+        <h2 id="sdk-status">Инициализация...</h2>
+      </div>
+      <p id="sdk-hint" class="muted">
+        Если сайт открыт вне приложения Eventicious, SDK-методы будут недоступны.
+      </p>
+    </section>
+
+    <section class="grid">
+      <article class="panel">
+        <p class="label">Распознанный пользователь</p>
+        <h3 id="identity-name">Пока не определен</h3>
+        <dl class="details">
+          <div>
+            <dt>User GUID</dt>
+            <dd id="user-guid">-</dd>
+          </div>
+          <div>
+            <dt>Email</dt>
+            <dd id="user-email">-</dd>
+          </div>
+          <div>
+            <dt>Event ID</dt>
+            <dd id="event-id">-</dd>
+          </div>
+          <div>
+            <dt>Environment</dt>
+            <dd id="sdk-env">-</dd>
+          </div>
+          <div>
+            <dt>Locale</dt>
+            <dd id="sdk-locale">-</dd>
+          </div>
+          <div>
+            <dt>Время открытия</dt>
+            <dd id="opened-at">-</dd>
+          </div>
+        </dl>
+      </article>
+
+      <article class="panel">
+        <p class="label">Ответ Cloudflare Worker</p>
+        <pre id="worker-response" class="response">Ожидаем результат...</pre>
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="actions">
+        <button id="identify-button" type="button">Проверить пользователя</button>
+        <button id="profile-button" type="button" class="secondary">Показать raw profile</button>
+        <button id="close-button" type="button" class="ghost">Закрыть экран</button>
+      </div>
+      <pre id="profile-preview" class="response hidden"></pre>
+    </section>
+  </main>
+
+  <script type="text/javascript" src="eventicious://universal_component/eventicious_sdk-1.0.js"></script>
+  <script type="text/javascript" src="https://sdk.eventicious.com/eventicious_sdk-1.0.js"></script>
+  <script type="text/javascript" src="/app.js"></script>
+</body>
+</html>
