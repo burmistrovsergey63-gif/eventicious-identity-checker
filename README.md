@@ -1,6 +1,6 @@
 # Eventicious Reward Shop
 
-Small Eventicious project: a page opens inside the app, identifies the current visitor through `EventiciousSDK`, shows a small reward store, and writes off points through a Cloudflare Worker.
+Small Eventicious project: a page opens inside the app, identifies the current visitor through `EventiciousSDK`, shows a small reward store, and writes off points through a server backend.
 
 ## Features
 
@@ -11,8 +11,9 @@ Small Eventicious project: a page opens inside the app, identifies the current v
 - shows a small reward catalog
 - sends purchases to `/api/purchase`
 - uses the Eventicious external API to write off points by sending negative `scores`
-- stores orders in Cloudflare KV through the `ORDERS_KV` binding
-- can optionally store visits in Cloudflare KV through the `VISITS_KV` binding
+- supports the original Cloudflare Worker deployment
+- includes a Layero-compatible Flask runtime backend
+- includes a fallback `npm run build` for Layero generic/static builds
 
 ## Project Structure
 
@@ -21,6 +22,9 @@ Small Eventicious project: a page opens inside the app, identifies the current v
 - `public/styles.css` - styling
 - `src/index.js` - Cloudflare Worker API, Eventicious API bridge, and static asset handler
 - `src/shop-catalog.js` - default shop items
+- `app.py` - Layero/Flask backend that serves the UI and API routes
+- `requirements.txt` - Python dependencies for the Layero runtime
+- `scripts/build-static.mjs` - static fallback build for generic platforms
 - `wrangler.jsonc` - Cloudflare Workers config
 - `.dev.vars.example` - example local development secrets
 
@@ -40,6 +44,33 @@ If the page is opened outside Eventicious, the site falls back to browser-only m
 - The `scores` field may be negative, which enables point deduction.
 - In the provided docs there is no endpoint for reading the current points balance, so the shop cannot reliably pre-check the remaining balance.
 - Identity is collected from the Eventicious SDK running in the client. This is workable for an MVP, but it is not a cryptographically verified checkout flow.
+- The Layero Flask runtime keeps order history only in memory by default. If you need durable storage there, add an external database or storage service.
+
+## Layero Deploy
+
+For a full working Layero deploy, use the Flask/runtime mode rather than a pure static generic build. Static hosting can show the UI, but the purchase flow needs server-side secrets and API routes.
+
+Required environment variables for Layero:
+
+```text
+EVENTICIOUS_CLIENT_ID
+EVENTICIOUS_CLIENT_SECRET
+```
+
+Optional:
+
+```text
+EVENTICIOUS_BASE_URL=https://api-integration.eventicious.ru
+EVENTICIOUS_ALLOW_PROFILE_ID_FALLBACK=false
+SHOP_DEBUG_MODE=false
+SHOP_ITEMS_JSON=[...]
+```
+
+If the Layero project is still configured as a generic/static app, the repository now also contains:
+
+- `npm run build` - copies `public/` into `dist/`
+
+That removes the previous `Missing script: build` error, but the full reward shop still needs the Flask runtime to execute `/api/*`.
 
 ## Cloudflare Secrets
 
